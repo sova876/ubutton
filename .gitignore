@@ -3,3 +3,4 @@
 .pylintrc
 all-stubs
 wlanconfig.json
+__pycache__
