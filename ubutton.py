@@ -2,8 +2,8 @@ import time
 import machine
 
 class ubutton(object):
-    def __init__(self, pin, cb_short=None, shrt_args=None, cb_long=None, lng_args=None, irq = None,
-                       bounce_time=50, long_time=500, click_timeout = 500, downtime = 2000):
+    def __init__(self, pin, irq=None,
+                       bounce_time=50, long_time=500, click_timeout = 500, downtime = 2000, **kwargs):
         
         self.pin = pin
         self.bounce_time = bounce_time
@@ -17,32 +17,26 @@ class ubutton(object):
         self.hold_flag = False
         self.counter = 0
 
-        # if counting:
-        #     self.cbs_args = kwargs
-
-        if cb_short:
-            if not callable(cb_short):
-                raise TypeError("'cb_short' must be a callable")
-            else: 
-                self.cb_short = cb_short
-                self.short_args=shrt_args
+        self.callbacks = kwargs['cbs']
+        self.cbs_args = kwargs["cb_args"]
+        keys = self.callbacks.keys()
+        max_clicks = max([key for key in keys if type(key) is int]) + 1
+        [self.callbacks.setdefault(key, lambda *a, **k: None) for key in range(1, max_clicks)]
+        [self.cbs_args.setdefault(key, []) for key in range(1, max_clicks)]
         
-        if cb_long:
-            if not callable(cb_long):
-                raise TypeError("'cb_long' must be a callable")
-            else: 
-                self.cb_long = cb_long
-                self.long_args = lng_args
+        # if cb_long:
+        #     # self.callbacks[1] = cb_short
+        #     # self.cbs_args[1] = kwargs["short_args"]
+        
+        #     self.callbacks[-1] = cb_long
+        #     self.cbs_args[-1] = kwargs["long_args"]
+
+        if False in [callable(val) for val in self.callbacks.values()]:  
+            raise TypeError("All callbacks must be a callable")     
 
         if irq:
             self.pin.irq(handler=self.cb_interrupt, trigger=irq)
     
-    # def _cb_short(self):
-    #     self.cb_short(*self.short_args)
-    
-    # def _cb_long(self):
-    #     self.cb_long(*self.long_args)
-
     def handler(self):
 
         btn_state = self.pin.value()
@@ -65,17 +59,22 @@ class ubutton(object):
         
         if not btn_state and not self.btn_flag and ticks_diff > self.click_timeout and self.counter != 0:
             print("Counter:", self.counter)
-            self.counter = 0
-            if self.hold_flag:
-                print("Long press")
-            else: 
-                print("Short press")
-                # self._cb_short()
-                self.cb_short(*self.short_args)
             self.handled = True
-        elif ticks_diff > self.downtime:
-            print("Downtime!")
-            self.handled = True
+
+        # if not self.counting and not self.hold_flag and self.handled:
+        #     print("Short press")
+        #     self.callbacks[1](*self.cbs_args[1])
+        # elif not self.counting and self.hold_flag and self.handled:
+        #     print("Long press")
+        #     self.callbacks[-1](*self.cbs_args[-1])
+        # elif self.counting and self.handled:
+        #     self.callbacks[self.counter](*self.cbs_args[self.counter])
+
+        if not self.hold_flag and self.handled:
+            self.callbacks[self.counter](*self.cbs_args[self.counter])
+        elif self.hold_flag and self.handled:
+            print("Long press")
+            self.callbacks['long'](*self.cbs_args['long'])            
 
     def cb_interrupt(self, pin):
 
@@ -89,4 +88,3 @@ class ubutton(object):
 
         while not self.handled:
             self.handler()
-            # print("Handled: ", self.handled)
