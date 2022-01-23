@@ -1,5 +1,4 @@
 import time
-import machine
 
 class ubutton(object):
     def __init__(self, pin, irq=None,
@@ -23,13 +22,6 @@ class ubutton(object):
         max_clicks = max([key for key in keys if type(key) is int]) + 1
         [self.callbacks.setdefault(key, lambda *a, **k: None) for key in range(1, max_clicks)]
         [self.cbs_args.setdefault(key, []) for key in range(1, max_clicks)]
-        
-        # if cb_long:
-        #     # self.callbacks[1] = cb_short
-        #     # self.cbs_args[1] = kwargs["short_args"]
-        
-        #     self.callbacks[-1] = cb_long
-        #     self.cbs_args[-1] = kwargs["long_args"]
 
         if False in [callable(val) for val in self.callbacks.values()]:  
             raise TypeError("All callbacks must be a callable")     
@@ -60,15 +52,6 @@ class ubutton(object):
         if not btn_state and not self.btn_flag and ticks_diff > self.click_timeout and self.counter != 0:
             print("Counter:", self.counter)
             self.handled = True
-
-        # if not self.counting and not self.hold_flag and self.handled:
-        #     print("Short press")
-        #     self.callbacks[1](*self.cbs_args[1])
-        # elif not self.counting and self.hold_flag and self.handled:
-        #     print("Long press")
-        #     self.callbacks[-1](*self.cbs_args[-1])
-        # elif self.counting and self.handled:
-        #     self.callbacks[self.counter](*self.cbs_args[self.counter])
 
         if not self.hold_flag and self.handled:
             self.callbacks[self.counter](*self.cbs_args[self.counter])

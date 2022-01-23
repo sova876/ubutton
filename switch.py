@@ -46,8 +46,34 @@ button12 = ubutton(
         bounce_time=50, long_time=500, click_timeout = 500, downtime = 2000, 
         **callback_args
     )
+
+def timer_cb(adc, pin):
+    illumin_state = adc.read()
+    if illumin_state > 3500:
+        print("Dark!")
+        # pin.value(1)
+
+class usensor(object):
+
+    def __init__(self, pin, sensor, poll_period):
+        self.pin = pin
+        self.sensor = sensor
+        self.period = poll_period
+
+        timer_1 = Timer(1)
+        timer_1.init(period=self.period, mode=Timer.PERIODIC, callback=self.cb)
+
+    def cb(self, timer_1):
+        reading = self.sensor.read()
+        print('Sensor readings: ', reading)
+        if reading > 3500:
+            self.pin.value(1)
+        elif reading < 2000:
+            self.pin.value(0)
+
 adc = machine.ADC(machine.Pin(34))
 # ToDo: Add MQTT publish, dimmer callback
-timer_1 = Timer(1)
+# timer_1 = Timer(1)
 # ToDo: Add photoresistor monitoring and condition to turn led on and off
-timer_1.init(period=2000, mode=Timer.PERIODIC, callback=lambda t:print(adc.read()))
+# timer_1.init(period=2000, mode=Timer.PERIODIC, callback=timer_cb)
+sensor = usensor(pin = leds[27], sensor = adc, poll_period=2000)
