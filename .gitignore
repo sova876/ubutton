@@ -1,9 +1,3 @@
 .espenv
 .vscode
-.pylintrc
-all-stubs
-micropython-stubs
-bme280.py
-bmet.py
-wlanconfig.json
 __pycache__
